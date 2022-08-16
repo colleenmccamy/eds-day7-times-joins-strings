@@ -1,0 +1,361 @@
+---
+title: "Dates, Joins and Strings"
+format: html
+editor: visual
+---
+
+## 
+
+---
+title: "Joins and strings and dates"
+format: html
+editor: visual
+---
+
+```{r}
+
+library(tidyverse)
+library(lubridate)
+library(stringr)
+
+```
+
+## Mutating Joins
+
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+```{r}
+
+animals <- tibble::tribble(
+             ~location,   ~species,  ~maturity,
+              "lagoon",   "bobcat",    "adult",
+               "bluff",   "coyote", "juvenile",
+               "creek",      "fox",    "adult",
+                "oaks", "squirrel", "juvenile",
+               "bluff",   "bobcat",    "adult"
+             )
+
+sites <- tibble::tribble(
+           ~location,      ~full_site_name, ~jurisdiction,
+             "beach",       "Goleta Beach",     "SB City",
+            "lagoon",        "UCSB Lagoon",        "UCSB",
+             "bluff",       "Ellwood Mesa",     "SB City",
+              "oaks", "Fremont Campground",        "USFS"
+           )
+
+# using datapasta but it is not the most reproducible way to get data into R; this is one of those cases
+
+```
+
+### Full join
+
+```{r}
+
+full_join_example <- full_join(animals, sites, by = "location")
+
+# data set with different names you would do by = c("key column name" = "key column name 2"))
+
+# use by = to sepcify the key column
+
+```
+
+### Left join
+
+```{r}
+
+left_join_example <- left_join(animals, sites, by = "location")
+
+```
+
+### Right join
+
+```{r}
+
+right_join_example <- right_join(animals, sites, by = "location")
+
+```
+
+### Inner join
+
+```{r}
+
+inner_join_example <- inner_join(animals, sites, by = "location")
+
+```
+
+```{r}
+
+sites_2 <- sites |> 
+  rename(loc = location)
+
+# renaming for an exmaple
+
+```
+
+### Example of joining when key variables have non-matching names
+
+```{r}
+
+nonmatching <- full_join(animals, sites_2, by = c("location" = "loc"))
+
+```
+
+## Filtering Joins
+
+Filtering joins do not add new columns
+
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+### Semi join
+
+```{r}
+
+semi_join_example <- semi_join(animals, sites, by = "location")
+
+# keeps everything but creeks since that is not in the section dataframe
+
+```
+
+### Anti join
+
+```{r}
+
+anti_join_example <- anti_join(animals, sites, by = "location")
+
+# only contains creeks since this is not in the second 
+
+```
+
+## Refreshers Part 1
+
+```{r}
+
+library(palmerpenguins)
+
+penguins_data <- (penguins) |> 
+  filter(island %in% c("Biscoe", "Dream")) |> 
+  select(-"year", -"sex") |> 
+  mutate("body_mass_kg" = body_mass_g / 1000) |> 
+  rename("location" = island)
+
+```
+
+## Dates & Times with `lubridate()`
+
+```{r}
+# creating a series of dates to see what the lubridate function does with them
+
+# function mdy, ypd, dmy 
+
+my_date <- "03-15-1998"
+lubridate::mdy(my_date)
+
+my_date_2 <- "11/7/2003"
+lubridate::dmy(my_date_2)
+
+my_date_3 <- "08-Jun-1974"
+lubridate::dmy(my_date_3)
+
+my_date_4 <- "19610519"
+real_date_4 <- lubridate::ymd(my_date_4)
+
+# tidyverts packages for time series data frames etc
+```
+
+### Breaking the `lubridate` package
+
+```{r}
+
+lubridate::mdy("1942-08-30")
+lubridate::dmy("09/22/84")
+
+#testing this out too
+lubridate::mdy(c("03-29-1996", "05/241998"))
+
+```
+
+### Adding times to date times
+
+```{r}
+
+time <- "2020-08-12 11:18"
+
+time_2 <- ymd_hm(time)
+```
+
+### Converting timezones
+
+```{r}
+
+with_tz(time_2, "America/Los_Angeles")
+
+with_tz(time, "Europe/Dublin")
+
+with_tz(time = time_2, tzone = "America/Los_Angeles")
+
+
+```
+
+### Parsing Pieces of Information
+
+```{r}
+
+my_time <- lubridate::ymd_hm(time)
+
+year(my_time)
+hour(my_time)
+month(my_time)
+```
+
+### Information about dates with `lubridate`
+
+```{r}
+
+teddy_bday <- lubridate::ymd("20170615")
+
+wday(teddy_bday, label = TRUE)
+week(teddy_bday)
+
+my_bday <- lubridate::ymd("19960329")
+wday(my_bday, label = TRUE)
+
+```
+
+```{r}
+
+urchin_counts <- tribble(
+  ~date, ~species, ~size_mm,
+  "10/3/2020", "purple", 55,
+  "10/4/2020", "red", 48,
+  "11/17/2020", "red", 67
+)
+
+urchin_ymd <- urchin_counts |> 
+  mutate(date = mdy(date)) |> 
+  mutate(year = year(date), month = month(date), day = day(date))
+
+# using mutate to group by the years or months etc.
+
+```
+
+### Finding Intervals between dates
+
+```{r}
+
+day_1 <- ymd("2020-01-06")
+day_2 <- ymd("2020-05-18")
+
+time_interval <- interval(day_1, day_2)
+class(time_interval)
+# class is an intermediate class as part of lubridate
+
+time_length(time_interval, "day")
+
+```
+
+## Using stringr to find patterns in strings
+
+```{r}
+
+# using stringr to find patterns in a string
+
+my_string <- c("burrito", "fish taco", "taco salad")
+
+my_string |> 
+  str_detect("fish")
+
+my_string |> 
+  str_detect("taco")
+
+```
+
+### Using `stringr` with the
+
+```{r}
+
+# pulling out all of the characters with skywaler in the name
+
+# first creating a subset using filter, 
+# using string detect to return 
+
+skywalkers <- starwars |> 
+  filter(str_detect(name, pattern = "Skywalker"))
+
+# code above in words -starting from original starwars data frame want to only keep rows where the pattern "Skywalker" exisiting in the name column
+
+
+maul <- starwars |> 
+  filter(str_detect(name, pattern = "Maul"))
+
+# creating a subset that keep rows where blue shows up in the eye color alone or in combination with another eye color
+
+blue_eye <- starwars |> 
+  filter(str_detect(eye_color, pattern = "blue"))
+
+# can extend this to more complex filters and vectors
+
+# NOTE - these are case sensitive
+```
+
+### `str_replace()` to replace string patterns
+
+```{r}
+
+# need to first use mutate to either add a new column or change the column
+
+firewalkers <- starwars |> 
+  mutate(name_2 = str_replace(name, pattern = "Sky", replacement = "Fire"))
+
+```
+
+### Using `stringr` to remove extra spaces
+
+```{r}
+
+feedback <- c("   I ate   some    nachos", "Wednesday  morning   ")
+
+# string trim removes any leading or ending white space
+str_trim(feedback)
+str_squish(feedback)
+# string squish removes any excess spaces between the strings
+```
+
+### Using `str_to` options to update text formatting
+
+```{r}
+
+str_to_lower(feedback)
+# all of the text in the string is converted to lower case
+
+str_to_upper(feedback)
+# all the text to uppercase
+
+str_to_title(feedback)
+# all the text to title case
+
+
+# Example - from starwars, create a new data frame from starwars_lc that adds a new column called name_lower conatining character names converted to all lowercase
+
+starwars_lc <- starwars |> 
+  mutate(name_lower = str_to_lower(name))
+
+# used mutate to create a new column that contains all of the character names in lowercase text 
+
+```
+
+## Using `case_when()` 
+
+```{r}
+
+sw_robot <- starwars |> 
+  mutate(robot_status = case_when(
+    species == "Droid" ~ "A ROBOT!!",
+    species == "Human" ~ "It's a human!",
+    TRUE ~ "This is something else"
+  ))
+  
+
+# case when gives us a way to write if else statements to populate a new column without having to write 
+
+# code above is when species is a "Droid" then populate this column with "A ROBOT!!" and if the species is a human then populate with "It's a human and if none of these are true then this is something else
+```
